@@ -1,0 +1,62 @@
+import pandas as pd
+import numpy as np
+import matplotlib.pyplot as plt
+import warnings
+from pyramid.arima import auto_arima
+warnings.filterwarnings("ignore")
+
+def Scaler(array):
+  global mean,std
+  mean = array.mean()
+  std = array.std()
+  return pd.Series([(x-mean)/std for x in array])
+
+def inv_Scaler(array):
+  global mean,std
+  return pd.Series([std*x+mean for x in array])
+
+def arima_pre(data,head='Prediction'):
+  #columns重命名
+  data.columns = ['date','value']
+  #对缺失日期线性插值
+  helper = pd.DataFrame({'date': pd.date_range(data['date'].min(), data['date'].max())})
+  data = pd.merge(data, helper, on='date', how='outer').sort_values('date')
+  data.reset_index(drop=True,inplace=True)
+  data['value'] = data['value'].apply(pd.to_numeric, errors='ignore')
+  data=data.interpolate(method='linear')
+  #数据标准化
+  train = data['value']
+  train = Scaler(train)
+  #利用全部数据进行预测
+  model = auto_arima(train,max_p=8, max_d=5,max_q=8, max_P=6, max_D=4,max_Q=6,error_action='ignore',suppress_warnings=True)
+  # print(model.summary()) 打印模型参数命令
+  model.fit(train)
+  s=int(len(train))
+  forecast = model.predict(n_periods=s)
+  # forecast = pd.DataFrame(forecast,index=range(train.index.max()+1,train.index.max()+1+s))
+  #显示原始数据
+  train = inv_Scaler(train)
+  forecast = inv_Scaler(forecast)
+  #显示以往及预测数据
+  plt.plot(data['date'],train)
+  plt.plot(pd.date_range(start=data['date'].max(),periods=s),forecast)
+  plt.xticks(rotation=45)
+  plt.ylabel(head)
+  plt.legend(['True Value','Predict Value'],loc=0)
+  plt.show()
+
+global mean,std
+
+
+arima_pre(pd.DataFrame([time_Z,bid1_Z/req1_Z]).T,'bid1/req1_Zhengzhou')
+arima_pre(pd.DataFrame([time_C,bid1_C/req1_C]).T,'bid1/req1_Chengdu')
+arima_pre(pd.DataFrame([time_G,bid1_G/req1_G]).T,'bid1/req1_Guangzhou')
+
+arima_pre(pd.DataFrame([time_Z,bid1_Z/req_Zhengzhou]).T,'bid1/req_Zhengzhou')
+arima_pre(pd.DataFrame([time_C,bid1_C/req_Chendu]).T,'bid1/req_Chengdu')
+arima_pre(pd.DataFrame([time_G,bid1_G/req_Guangzhou]).T,'bid1/req_Guangzhou')
+
+arima_pre(pd.DataFrame([time_Z,req1_Z]).T,'req1_Z')
+arima_pre(pd.DataFrame([time_Z,req2_Z]).T,'req2_Z')
+arima_pre(pd.DataFrame([time_Z,req3_Z]).T,'req3_Z')
+arima_pre(pd.DataFrame([time_Z,req4_Z]).T,'req4_Z')
