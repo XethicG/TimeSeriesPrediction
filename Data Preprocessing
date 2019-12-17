@@ -1,0 +1,101 @@
+import scipy.stats as stats
+import numpy as np
+import pandas as pd
+import seaborn as sns
+import io
+import matplotlib.pyplot as plt
+from pylab import mpl
+from google.colab import files
+
+def Data_reduction(a,str):
+  # first=0
+  # for i in range(1,Basic.shape[0]):
+  #   if Basic.iloc[i,0] == Basic.iloc[first,0]:      
+  #     for j in range(1,Basic.shape[1]):
+  #       Basic.iloc[first,j] = Basic.iloc[first,j] + Basic.iloc[i,j]
+  #   else:
+  #     first = i    
+  # Basic.drop_duplicates(subset='date',keep='first',inplace=True)
+  a = a[~a[str].isin([0])]
+  return a
+
+Basic_GCZ = pd.read_csv(io.StringIO(uploaded['Basic_GCZ_CSV.csv'].decode('utf-8')))
+Basic_GCZ = Basic_GCZ[~Basic_GCZ['duration'].isin([30])]
+
+Basic_GCZ = Data_reduction(Basic_GCZ,'req')
+Basic_GCZ = Data_reduction(Basic_GCZ,'req1')
+Basic_GCZ = Data_reduction(Basic_GCZ,'bid1')
+
+
+
+Basic_Chendu = Basic_GCZ.loc[Basic_GCZ['Market']=='Chengdu']
+Basic_Guangzhou = Basic_GCZ.loc[Basic_GCZ['Market']=='Guangzhou']
+Basic_Zhengzhou = Basic_GCZ.loc[Basic_GCZ['Market']=='Zhengzhou']
+
+String = ['date','req','req1','req2','req3','req4','req5','req6','req7','req8','bid1','bid2','bid3','bid4','bid5','bid6','bid7','bid8','impt1','impt2','impt3','impt4','impt5','impt6','impt7','impt8']
+
+Basic_Chendu,Basic_Guangzhou,Basic_Zhengzhou = pd.DataFrame(Basic_Chendu,columns=String),pd.DataFrame(Basic_Guangzhou,columns=String),pd.DataFrame(Basic_Zhengzhou,columns=String)
+
+
+date_Chendu = Basic_Chendu['date']
+date_Guangzhou = Basic_Guangzhou['date']
+date_Zhengzhou = Basic_Zhengzhou['date']
+
+req_Chendu = Basic_Chendu['req']
+req_Guangzhou = Basic_Guangzhou['req']
+req_Zhengzhou = Basic_Zhengzhou['req']
+
+req1_C,req1_G,req1_Z = Basic_Chendu['req1'],Basic_Guangzhou['req1'],Basic_Zhengzhou['req1']
+bid1_C,bid1_G,bid1_Z = Basic_Chendu['bid1'],Basic_Guangzhou['bid1'],Basic_Zhengzhou['bid1']
+
+req2_C,req3_C,req4_C = Basic_Chendu['req2'],Basic_Chendu['req3'],Basic_Chendu['req4']
+req2_G,req3_G,req4_G = Basic_Guangzhou['req2'],Basic_Guangzhou['req3'],Basic_Guangzhou['req4']
+req2_Z,req3_Z,req4_Z = Basic_Zhengzhou['req2'],Basic_Zhengzhou['req3'],Basic_Zhengzhou['req4']
+
+time_C,time_G,time_Z = Basic_Chendu['date'],Basic_Guangzhou['date'],Basic_Zhengzhou['date']
+time_C,time_G,time_Z=pd.DatetimeIndex(time_C),pd.DatetimeIndex(time_G),pd.DatetimeIndex(time_Z)
+
+
+plt.plot
+plt.plot(time_C,req_Chendu)
+plt.plot(time_G,req_Guangzhou)
+plt.plot(time_Z,req_Zhengzhou)
+plt.ylabel('Req_All')
+plt.xlabel('Date')
+plt.xticks(rotation=45)
+plt.legend(['Chengdu','Guangzhou','Zhengzhou'],loc='upper left')
+plt.show()
+
+plt.plot(time_C,req1_C)
+plt.plot(time_G,req1_G)
+plt.plot(time_Z,req1_Z)
+plt.ylabel('Req1_All')
+plt.xlabel('Date')
+plt.xticks(rotation=45)
+plt.legend(['Chengdu','Guangzhou','Zhengzhou'],loc='upper left')
+plt.show()
+
+plt.plot
+plt.plot(time_C,bid1_C/req1_C)
+plt.plot(time_G,bid1_G/req1_G)
+plt.plot(time_Z,bid1_Z/req1_Z)
+plt.ylabel('Bid1/Req1')
+plt.xlabel('Date')
+plt.xticks(rotation=45)
+plt.legend(['Chengdu','Guangzhou','Zhengzhou'],loc='upper left')
+plt.show()
+
+plt.hist(bid1_C/req1_C,normed = 1,alpha=0.75,histtype = 'bar')
+plt.show()
+
+plt.plot
+plt.plot(time_C,bid1_C/req_Chendu)
+plt.plot(time_G,bid1_G/req_Guangzhou)
+plt.plot(time_Z,bid1_Z/req_Zhengzhou)
+plt.ylabel('Bid1/Req')
+plt.xlabel('Date')
+plt.xticks(rotation=45)
+plt.legend(['Chengdu','Guangzhou','Zhengzhou'],loc='upper left')
+plt.show()
+
+
