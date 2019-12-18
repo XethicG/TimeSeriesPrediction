@@ -1,0 +1,110 @@
+import pandas as pd
+import numpy as np
+import matplotlib.pyplot as plt
+import warnings
+import seaborn as sns
+import io
+from pyramid.arima import auto_arima
+warnings.filterwarnings("ignore")
+def Data_reduction(a,str):
+  return a[~a[str].isin([0])]
+
+def Filter_by_con(df,string):
+  if len(string) != 7:
+    return []
+  else:     
+    i=df.loc[(df['Market']==string[0]) & (df['Media/SSP']==string[1]) & (df['Media']==string[2]) & (df['Device']==string[3]) & (df['DealType']==string[4]) & (df['AdType']==string[5]) & (df['duration']==int(string[6]))]
+    i=i[~i['req'].isin([0])]
+    i=i[~i['req1'].isin([0])]
+    i=i[~i['bid1'].isin([0])]    
+    return i.reset_index(drop=True)
+
+def target(df,string):
+  if string == 'bid1%':
+    df=pd.DataFrame({'date':df['date'],'bid1%':(df['bid1']/df['req1'])})
+  elif string == 'bid2%':
+    df=pd.DataFrame({'date':df['date'],'bid2%':(df['bid2']/df['req2'])})
+  else:
+    df=df[['date',string]]
+  df['date']=pd.DatetimeIndex(df['date'])
+  return df
+
+def Scaler(array):
+  global mean,std
+  mean = array.mean()
+  std = array.std()
+  return pd.Series([(x-mean)/std for x in array])
+
+def inv_Scaler(array):
+  global mean,std
+  return pd.Series([std*x+mean for x in array])
+
+def arima_pre(data,head='Prediction'):
+  #columns重命名
+  data.columns = ['date','value']
+  #对缺失日期线性插值
+  if len(data)<40:
+    print("数据过少 无法准确预测！")
+    helper = pd.DataFrame({'date': pd.date_range(data['date'].min(), data['date'].max())})
+    data = pd.merge(data, helper, on='date', how='outer').sort_values('date')
+    data.reset_index(drop=True,inplace=True)
+    data['value'] = data['value'].apply(pd.to_numeric, errors='ignore')
+    data=data.interpolate(method='linear')
+    train = data['value']   
+
+    s=int(len(train)/2)
+    forecast = np.ones(s)
+    forecast = forecast*data['value'].mean()
+    #显示以往及预测数据
+    plt.plot(data['date'],train)
+    plt.plot(pd.date_range(start=data['date'].max(),periods=s),forecast)
+    plt.xticks(rotation=45)
+    plt.ylabel(head)
+    plt.legend(['True Value','Predict Value'],loc=0)
+    plt.show()    
+  else:
+    helper = pd.DataFrame({'date': pd.date_range(data['date'].min(), data['date'].max())})
+    data = pd.merge(data, helper, on='date', how='outer').sort_values('date')
+    data.reset_index(drop=True,inplace=True)
+    data['value'] = data['value'].apply(pd.to_numeric, errors='ignore')
+    data=data.interpolate(method='linear')
+    train = data['value']
+    index = np.array(train)
+    #数据滤波/标准化
+    for i in range(1,len(data)):
+      train[i]=0.7*index[i]+0.3*index[i-1]
+    train = Scaler(train)
+    #利用全部数据进行预测
+    model = auto_arima(train,max_p=8, max_d=5,max_q=8, max_P=6, max_D=4,max_Q=6,seasonal=True,error_action='ignore',suppress_warnings=True)
+    # 打印模型参数命令
+    print(model.summary())
+    model.fit(train)
+    s=int(len(train)/2)
+    forecast = model.predict(n_periods=s)
+    # forecast = pd.DataFrame(forecast,index=range(train.index.max()+1,train.index.max()+1+s))
+    #显示原始数据
+    train = inv_Scaler(train)
+    forecast = inv_Scaler(forecast)
+    for i in range(1,len(forecast)):
+      if forecast[i]<0:
+        forecast[i] = forecast[i-1]
+
+    #显示以往及预测数据
+    plt.plot(data['date'],index)
+    plt.plot(data['date'],train)
+    plt.plot(pd.date_range(start=data['date'].max(),periods=s),forecast)
+    plt.xticks(rotation=45)
+    plt.ylabel(head)
+    plt.legend(['True Value','Filtered Value','Predict Value'],loc=0)
+    plt.show()
+
+global mean,std
+Test = pd.read_csv(io.StringIO(uploaded['Basic.csv'].decode('utf-8')))
+
+string = ['Zhengzhou','Hypers','YOUKU','OTT','PDB','pre-roll','15']
+
+Test=Filter_by_con(Test,string)
+
+Test=target(Test,'bid1%')
+
+arima_pre(Test)
