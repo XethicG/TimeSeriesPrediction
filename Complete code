@@ -24,6 +24,18 @@ def target(df,string):
     df=pd.DataFrame({'date':df['date'],'bid1%':(df['bid1']/df['req1'])})
   elif string == 'bid2%':
     df=pd.DataFrame({'date':df['date'],'bid2%':(df['bid2']/df['req2'])})
+  elif string == 'bid3%':
+    df=pd.DataFrame({'date':df['date'],'bid3%':(df['bid3']/df['req3'])})
+  elif string == 'bid4%':
+    df=pd.DataFrame({'date':df['date'],'bid3%':(df['bid4']/df['req4'])})
+  elif string == 'req1%':
+    df=pd.DataFrame({'date':df['date'],'req1%':(df['req1']/df['req'])})
+  elif string == 'req2%':
+    df=pd.DataFrame({'date':df['date'],'req2%':(df['req2']/df['req'])})
+  elif string == 'req3%':
+    df=pd.DataFrame({'date':df['date'],'req3%':(df['req3']/df['req'])})
+  elif string == 'req4%':
+    df=pd.DataFrame({'date':df['date'],'req4%':(df['req4']/df['req'])})
   else:
     df=df[['date',string]]
   df['date']=pd.DatetimeIndex(df['date'])
@@ -72,14 +84,14 @@ def arima_pre(data,head='Prediction'):
     index = np.array(train)
     #数据滤波/标准化
     for i in range(1,len(data)):
-      train[i]=0.7*index[i]+0.3*index[i-1]
+      train[i]=0.5*train[i]+0.5*train[i-1]
     train = Scaler(train)
     #利用全部数据进行预测
     model = auto_arima(train,max_p=8, max_d=5,max_q=8, max_P=6, max_D=4,max_Q=6,seasonal=True,error_action='ignore',suppress_warnings=True)
     # 打印模型参数命令
     print(model.summary())
     model.fit(train)
-    s=int(len(train)/2)
+    s=int(len(train))
     forecast = model.predict(n_periods=s)
     # forecast = pd.DataFrame(forecast,index=range(train.index.max()+1,train.index.max()+1+s))
     #显示原始数据
