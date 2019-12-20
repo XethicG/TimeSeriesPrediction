@@ -36,6 +36,14 @@ def target(df,string):
     df=pd.DataFrame({'date':df['date'],'req3%':(df['req3']/df['req'])})
   elif string == 'req4%':
     df=pd.DataFrame({'date':df['date'],'req4%':(df['req4']/df['req'])})
+  elif string == 'imp1%':
+    df=pd.DataFrame({'date':df['date'],'imp1%':(df['impt1']/df['bid1'])})
+  elif string == 'imp2%':
+    df=pd.DataFrame({'date':df['date'],'imp2%':(df['impt2']/df['bid2'])})
+  elif string == 'imp3%':
+    df=pd.DataFrame({'date':df['date'],'imp3%':(df['impt3']/df['bid3'])})
+  elif string == 'imp4%':
+    df=pd.DataFrame({'date':df['date'],'imp4%':(df['impt4']/df['bid4'])})
   else:
     df=df[['date',string]]
   df['date']=pd.DatetimeIndex(df['date'])
@@ -87,11 +95,11 @@ def arima_pre(data,head='Prediction'):
       train[i]=0.5*train[i]+0.5*train[i-1]
     train = Scaler(train)
     #利用全部数据进行预测
-    model = auto_arima(train,max_p=8, max_d=5,max_q=8, max_P=6, max_D=4,max_Q=6,seasonal=True,error_action='ignore',suppress_warnings=True)
+    model = auto_arima(train,max_p=8, max_d=5,max_q=8, max_P=6, max_D=5,max_Q=6,seasonal=True,error_action='ignore',suppress_warnings=True)
     # 打印模型参数命令
     print(model.summary())
     model.fit(train)
-    s=int(len(train))
+    s=int(len(train)/2)
     forecast = model.predict(n_periods=s)
     # forecast = pd.DataFrame(forecast,index=range(train.index.max()+1,train.index.max()+1+s))
     #显示原始数据
@@ -101,6 +109,7 @@ def arima_pre(data,head='Prediction'):
       if forecast[i]<0:
         forecast[i] = forecast[i-1]
 
+    # print(train.mean())
     #显示以往及预测数据
     plt.plot(data['date'],index)
     plt.plot(data['date'],train)
@@ -117,6 +126,6 @@ string = ['Zhengzhou','Hypers','YOUKU','OTT','PDB','pre-roll','15']
 
 Test=Filter_by_con(Test,string)
 
-Test=target(Test,'bid1%')
+Test=target(Test,'imp1%')
 
 arima_pre(Test)
